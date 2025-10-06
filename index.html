@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevos Hospitales en Construcción en Nicaragua</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        #map {
+            height: 600px;
+            width: 100%;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 3px solid #fff;
+        }
+        
+        .legend {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .legend h3 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+            font-size: 1.3em;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 1.1em;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .hospital-construction {
+            background: linear-gradient(45deg, #f39c12, #f1c40f);
+        }
+        
+        .hospital-completed {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+        }
+        
+        .no-hospital {
+            background: linear-gradient(45deg, #95a5a6, #bdc3c7);
+        }
+        
+        .popup-content {
+            text-align: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-width: 300px;
+            max-width: 400px;
+        }
+        
+        @media (max-width: 768px) {
+            .popup-content {
+                min-width: 280px;
+                max-width: 320px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .popup-content {
+                min-width: 260px;
+                max-width: 300px;
+            }
+        }
+        
+        .popup-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .popup-status {
+            font-size: 1.1em;
+            margin: 5px 0;
+        }
+        
+        .status-construction {
+            color: #f39c12;
+        }
+        
+        .status-completed {
+            color: #27ae60;
+        }
+        
+        .status-none {
+            color: #7f8c8d;
+        }
+        
+        .emoji {
+            font-size: 1.3em;
+            margin-right: 5px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9em;
+        }
+        
+        .animation-controls {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .animation-controls h3 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+            font-size: 1.3em;
+        }
+        
+        .animation-btn {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+        
+        .animation-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+        }
+        
+        .animation-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .animation-status {
+            margin-top: 10px;
+            font-size: 1em;
+            color: #7f8c8d;
+        }
+        
+        .tooltip-image {
+            width: 100%;
+            max-width: 350px;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin: 15px auto;
+            display: block;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+            transition: opacity 0.5s ease;
+        }
+        
+        @media (max-width: 768px) {
+            .tooltip-image {
+                max-width: 280px;
+                height: 200px;
+                margin: 10px auto;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .tooltip-image {
+                max-width: 250px;
+                height: 180px;
+                margin: 8px auto;
+            }
+        }
+        
+        .image-container {
+            position: relative;
+            margin: 10px 0;
+        }
+        
+        .image-counter {
+            text-align: center;
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏥 Nuevos Hospitales en Construcción en Nicaragua 🏥</h1>
+    </div>
+    
+    <div class="container">
+        <div id="map"></div>
+        
+        <div class="legend">
+            <h3>📊 Leyenda del Mapa</h3>
+            <div class="legend-item">
+                <div class="legend-color hospital-construction"></div>
+                <span>🏗️ Hospitales en Construcción</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color hospital-completed"></div>
+                <span>✅ Hospitales Completados</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color no-hospital"></div>
+                <span>📍 Sin Proyectos Hospitalarios</span>
+            </div>
+        </div>
+        
+        <div class="animation-controls">
+            <h3>🎬 Recorrido Automático</h3>
+            <button id="startAnimation" class="animation-btn">▶️ Iniciar Recorrido</button>
+            <button id="stopAnimation" class="animation-btn" disabled>⏹️ Detener</button>
+            <div id="animationStatus" class="animation-status">Presiona "Iniciar Recorrido" para comenzar</div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>🗺️ Mapa de Nicaragua - Departamentos y Regiones Autónomas</p>
+        <p>Datos actualizados sobre infraestructura hospitalaria</p>
+    </div>
+
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    
+    <script>
+        // Datos específicos de hospitales proporcionados
+        const hospitalData = {
+            "León": { 
+                status: "completed", 
+                name: "Hospital Escuela Oscar Danilo Rosales", 
+                emoji: "🏥",
+                fecha: "22 de septiembre de 2024",
+                images: ["h1.jpg", "h2.jpg", "h3.jpg"]
+            },
+            "Matagalpa": { 
+                status: "completed", 
+                name: "Hospital Primario Fidel Ventura (Waslala)", 
+                emoji: "🏥",
+                fecha: "21 de abril de 2025",
+                images: ["waslala1.jpg", "waslala2.jpg", "waslala3.jpg"]
+            },
+            "AtlánticoNorte": { 
+                status: "construction", 
+                name: "Hospital Regional Nuevo Amanecer (Bilwi)", 
+                emoji: "🏗️",
+                fecha: "Dic. 2025 – Ene. 2026",
+                images: ["bilwi1.jpg", "bilwi2.jpg", "bilwi3.jpg"]
+            },
+            "NuevaSegovia": { 
+                status: "completed", 
+                name: "Hospital Departamental Héroes de Las Segovias (Ocotal)", 
+                emoji: "🏥",
+                fecha: "2025",
+                images: ["heroes1.jpg", "heroes2.jpg", "heroes3.jpg"]
+            }
+        };
+
+        // Función para obtener el color según el estado
+        function getColor(status) {
+            switch(status) {
+                case 'construction': return '#f39c12';  // Amarillo para construcción
+                case 'completed': return '#27ae60';     // Verde para completados
+                case 'none': return '#95a5a6';         // Gris para sin datos
+                default: return '#95a5a6';
+            }
+        }
+
+        // Función para obtener el estilo del polígono
+        function style(feature) {
+            const departmentName = feature.properties.NAME_1;
+            const hospitalInfo = hospitalData[departmentName];
+            
+            if (hospitalInfo) {
+                return {
+                    fillColor: getColor(hospitalInfo.status),
+                    weight: 2,
+                    opacity: 1,
+                    color: '#fff',
+                    dashArray: '3',
+                    fillOpacity: 0.7
+                };
+            } else {
+                return {
+                    fillColor: '#95a5a6',
+                    weight: 1,
+                    opacity: 0.8,
+                    color: '#7f8c8d',
+                    dashArray: '1',
+                    fillOpacity: 0.3
+                };
+            }
+        }
+
+        // Función para crear el contenido del popup con imágenes rotativas
+        function createPopupContent(departmentName, hospitalInfo) {
+            console.log(`=== CREANDO POPUP CONTENT PARA ${departmentName} ===`);
+            console.log(`hospitalInfo.images:`, hospitalInfo.images);
+            
+            let statusText = '';
+            let statusClass = '';
+            
+            switch(hospitalInfo.status) {
+                case 'construction':
+                    statusText = 'En Construcción';
+                    statusClass = 'status-construction';
+                    break;
+                case 'completed':
+                    statusText = 'Completado / Entregado';
+                    statusClass = 'status-completed';
+                    break;
+            }
+            
+            let imageSection = '';
+            if (hospitalInfo.images && hospitalInfo.images.length > 0) {
+                console.log(`✅ Creando sección de imágenes para ${departmentName}`);
+                const imageId = `images-${departmentName.replace(/\s+/g, '-')}`;
+                console.log(`imageId generado: ${imageId}`);
+                
+                const imagesHtml = hospitalInfo.images.map((img, index) => 
+                    `<img src="${img}" class="tooltip-image" style="display: ${index === 0 ? 'block' : 'none'};" id="${imageId}-${index}" alt="Imagen ${index + 1} del hospital">`
+                ).join('');
+                
+                imageSection = `
+                    <div class="image-container">
+                        ${imagesHtml}
+                        <div class="image-counter" id="${imageId}-counter">1 / ${hospitalInfo.images.length}</div>
+                    </div>
+                `;
+                console.log(`HTML de imágenes creado:`, imageSection);
+            } else {
+                console.log(`❌ No hay imágenes para ${departmentName}`);
+            }
+            
+            // Formatear nombre del departamento para mostrar
+            let displayName = departmentName;
+            if (departmentName === 'AtlánticoNorte') {
+                displayName = 'Atlántico Norte';
+            } else if (departmentName === 'NuevaSegovia') {
+                displayName = 'Nueva Segovia';
+            }
+            
+            return `
+                <div class="popup-content">
+                    <div class="popup-title">${hospitalInfo.emoji} ${displayName}</div>
+                    <div class="popup-status ${statusClass}">
+                        <strong>${hospitalInfo.name}</strong>
+                    </div>
+                    <div class="popup-status ${statusClass}">
+                        Estado: ${statusText}
+                    </div>
+                    <div class="popup-status ${statusClass}">
+                        📅 Fecha: ${hospitalInfo.fecha}
+                    </div>
+                    ${imageSection}
+                </div>
+            `;
+        }
+
+        // Función para iniciar la rotación de imágenes
+        function startImageRotation(departmentName, images) {
+            if (!images || images.length <= 1) return;
+            
+            const imageId = `images-${departmentName.replace(/\s+/g, '-')}`;
+            let currentImageIndex = 0;
+            let rotationCount = 0;
+            const totalRotations = images.length; // Número de imágenes = número de rotaciones
+            
+            console.log(`Iniciando rotación para ${departmentName}, imágenes:`, images);
+            
+            // Función para mostrar una imagen específica
+            function showImage(index) {
+                console.log(`Mostrando imagen ${index}`);
+                
+                // Ocultar todas las imágenes
+                for (let i = 0; i < images.length; i++) {
+                    const img = document.getElementById(`${imageId}-${i}`);
+                    if (img) {
+                        img.style.display = 'none';
+                    }
+                }
+                
+                // Mostrar imagen actual
+                const currentImg = document.getElementById(`${imageId}-${index}`);
+                if (currentImg) {
+                    currentImg.style.display = 'block';
+                    console.log(`Imagen ${index} mostrada`);
+                }
+                
+                // Actualizar contador
+                const counter = document.getElementById(`${imageId}-counter`);
+                if (counter) {
+                    counter.textContent = `${index + 1} / ${images.length}`;
+                }
+            }
+            
+            // Mostrar primera imagen
+            showImage(0);
+            
+            // Usar setInterval para rotación
+            const rotationInterval = setInterval(() => {
+                console.log(`Intervalo ejecutándose - imagen actual: ${currentImageIndex}`);
+                currentImageIndex = (currentImageIndex + 1) % images.length;
+                rotationCount++;
+                console.log(`Cambiando a imagen ${currentImageIndex}, rotación ${rotationCount}/${totalRotations}`);
+                showImage(currentImageIndex);
+                
+                // Si hemos completado todas las rotaciones, marcar como completado
+                if (rotationCount >= totalRotations) {
+                    console.log(`Rotación completada para ${departmentName}`);
+                    clearInterval(rotationInterval);
+                    delete window[`interval-${imageId}`];
+                    
+                    // Marcar que este departamento ha terminado su rotación
+                    window[`rotation-completed-${imageId}`] = true;
+                }
+            }, 6000);
+            
+            // Guardar el intervalo
+            window[`interval-${imageId}`] = rotationInterval;
+            
+            console.log(`Rotación iniciada para ${imageId} con intervalo ${rotationInterval}`);
+        }
+
+        // Función para detener la rotación de imágenes
+        function stopImageRotation(departmentName) {
+            const imageId = `images-${departmentName.replace(/\s+/g, '-')}`;
+            const interval = window[`interval-${imageId}`];
+            if (interval) {
+                clearInterval(interval);
+                delete window[`interval-${imageId}`];
+                console.log(`Rotación detenida para ${imageId}`);
+            }
+        }
+
+
+        // Función para mostrar información en el popup
+        function onEachFeature(feature, layer) {
+            const departmentName = feature.properties.NAME_1;
+            const hospitalInfo = hospitalData[departmentName];
+            
+            console.log(`=== PROCESANDO DEPARTAMENTO: ${departmentName} ===`);
+            console.log(`hospitalInfo encontrado:`, hospitalInfo);
+            
+            if (hospitalInfo) {
+                console.log(`✅ Creando popup para ${departmentName}`);
+                const popupContent = createPopupContent(departmentName, hospitalInfo);
+                
+                layer.bindPopup(popupContent, {
+                    onOpen: function() {
+                        console.log(`=== POPUP ABIERTO PARA ${departmentName} ===`);
+                        console.log(`hospitalInfo:`, hospitalInfo);
+                        console.log(`hospitalInfo.images:`, hospitalInfo.images);
+                        console.log(`hospitalInfo.images.length:`, hospitalInfo.images ? hospitalInfo.images.length : 'undefined');
+                        
+                        // Iniciar rotación de imágenes cuando se abre el popup
+                        if (hospitalInfo.images && hospitalInfo.images.length > 0) {
+                            console.log(`✅ Condición cumplida - iniciando rotación`);
+                            
+                            // Iniciar rotación después de un breve delay
+                            setTimeout(() => {
+                                console.log(`⏰ Timeout ejecutado - llamando startImageRotation`);
+                                startImageRotation(departmentName, hospitalInfo.images);
+                            }, 100);
+                        } else {
+                            console.log(`❌ Condición NO cumplida - no hay imágenes`);
+                        }
+                    },
+                    onClose: function() {
+                        // Detener rotación de imágenes cuando se cierra el popup
+                        console.log(`=== POPUP CERRADO PARA ${departmentName} ===`);
+                        stopImageRotation(departmentName);
+                    }
+                });
+            } else {
+                const popupContent = `
+                    <div class="popup-content">
+                        <div class="popup-title">📍 ${departmentName}</div>
+                        <div class="popup-status status-none">
+                            Sin proyectos hospitalarios
+                        </div>
+                    </div>
+                `;
+                
+                layer.bindPopup(popupContent);
+            }
+        }
+
+        // Inicializar el mapa
+        const map = L.map('map').setView([12.8667, -85.2072], 7);
+
+        // Agregar capa de tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Variables para la animación
+        let geoJsonLayer;
+        let animationInterval;
+        let currentIndex = 0;
+        let isAnimating = false;
+        let departmentsWithHospitals = [];
+        let completedHospitals = [];
+        let constructionHospitals = [];
+
+        // Cargar y mostrar el GeoJSON
+        fetch('gadm41_NIC_2.json')
+            .then(response => response.json())
+            .then(data => {
+                geoJsonLayer = L.geoJSON(data, {
+                    style: style,
+                    onEachFeature: onEachFeature
+                }).addTo(map);
+                
+                // Separar departamentos por estado de hospital
+                data.features.forEach(feature => {
+                    const departmentName = feature.properties.NAME_1;
+                    const hospitalInfo = hospitalData[departmentName];
+                    
+                    if (hospitalInfo) {
+                        if (hospitalInfo.status === 'completed') {
+                            completedHospitals.push(feature);
+                        } else if (hospitalInfo.status === 'construction') {
+                            constructionHospitals.push(feature);
+                        }
+                    }
+                });
+                
+                // Combinar: primero completados, luego en construcción
+                departmentsWithHospitals = [...completedHospitals, ...constructionHospitals];
+                
+                // Configurar controles de animación
+                setupAnimationControls();
+            })
+            .catch(error => {
+                console.error('Error cargando el GeoJSON:', error);
+                // Mostrar mensaje de error en el mapa
+                L.marker([12.8667, -85.2072]).addTo(map)
+                    .bindPopup('Error cargando los datos del mapa')
+                    .openPopup();
+            });
+
+        // Función para configurar los controles de animación
+        function setupAnimationControls() {
+            const startBtn = document.getElementById('startAnimation');
+            const stopBtn = document.getElementById('stopAnimation');
+            const statusDiv = document.getElementById('animationStatus');
+            
+            startBtn.addEventListener('click', startAnimation);
+            stopBtn.addEventListener('click', stopAnimation);
+        }
+
+        // Función para iniciar la animación
+        function startAnimation() {
+            if (isAnimating) return;
+            
+            isAnimating = true;
+            currentIndex = 0;
+            
+            const startBtn = document.getElementById('startAnimation');
+            const stopBtn = document.getElementById('stopAnimation');
+            const statusDiv = document.getElementById('animationStatus');
+            
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            
+            // Mostrar todo Nicaragua primero
+            statusDiv.textContent = 'Mostrando Nicaragua completa...';
+            map.setView([12.8667, -85.2072], 7, {
+                animate: true,
+                duration: 1.0
+            });
+            
+            // Después de 3 segundos, comenzar con los hospitales
+            setTimeout(() => {
+                showNextDepartment();
+            }, 3000);
+        }
+        
+        // Función para verificar si la rotación ha terminado y avanzar
+        function checkAndAdvance() {
+            if (!isAnimating) return;
+            
+            if (currentIndex >= departmentsWithHospitals.length) {
+                // Terminar animación
+                stopAnimation();
+                return;
+            }
+            
+            const currentDepartment = departmentsWithHospitals[currentIndex];
+            const departmentName = currentDepartment.properties.NAME_1;
+            const imageId = `images-${departmentName.replace(/\s+/g, '-')}`;
+            
+            // Verificar si la rotación ha terminado
+            if (window[`rotation-completed-${imageId}`]) {
+                console.log(`Rotación completada para ${departmentName}, avanzando al siguiente`);
+                currentIndex++;
+                
+                if (currentIndex < departmentsWithHospitals.length) {
+                    showNextDepartment();
+                } else {
+                    stopAnimation();
+                }
+            } else {
+                // Verificar de nuevo en 1 segundo
+                setTimeout(checkAndAdvance, 1000);
+            }
+        }
+
+        // Función para detener la animación
+        function stopAnimation() {
+            if (!isAnimating) return;
+            
+            isAnimating = false;
+            
+            const startBtn = document.getElementById('startAnimation');
+            const stopBtn = document.getElementById('stopAnimation');
+            const statusDiv = document.getElementById('animationStatus');
+            
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            
+            if (animationInterval) {
+                clearInterval(animationInterval);
+                animationInterval = null;
+            }
+            
+            // Detener rotación de imágenes de todos los departamentos
+            Object.keys(hospitalData).forEach(departmentName => {
+                stopImageRotation(departmentName);
+                // Limpiar marcas de rotación completada
+                const imageId = `images-${departmentName.replace(/\s+/g, '-')}`;
+                delete window[`rotation-completed-${imageId}`];
+            });
+            
+            // Cerrar cualquier popup abierto
+            map.closePopup();
+            statusDiv.textContent = 'Recorrido detenido';
+        }
+
+        // Función para calcular el centro geométrico de un polígono
+        function calculateCenter(geometry) {
+            if (geometry.type === 'Polygon') {
+                const coordinates = geometry.coordinates[0];
+                let sumLat = 0, sumLng = 0;
+                coordinates.forEach(coord => {
+                    sumLng += coord[0];
+                    sumLat += coord[1];
+                });
+                return [sumLat / coordinates.length, sumLng / coordinates.length];
+            } else if (geometry.type === 'MultiPolygon') {
+                // Para MultiPolygon, calcular el centro del polígono más grande
+                let maxArea = 0;
+                let centerPolygon = null;
+                
+                geometry.coordinates.forEach(polygon => {
+                    const area = calculatePolygonArea(polygon[0]);
+                    if (area > maxArea) {
+                        maxArea = area;
+                        centerPolygon = polygon[0];
+                    }
+                });
+                
+                let sumLat = 0, sumLng = 0;
+                centerPolygon.forEach(coord => {
+                    sumLng += coord[0];
+                    sumLat += coord[1];
+                });
+                return [sumLat / centerPolygon.length, sumLng / centerPolygon.length];
+            }
+            return [12.8667, -85.2072]; // Centro de Nicaragua como fallback
+        }
+
+        // Función para calcular el área de un polígono
+        function calculatePolygonArea(coordinates) {
+            let area = 0;
+            for (let i = 0; i < coordinates.length - 1; i++) {
+                area += coordinates[i][0] * coordinates[i + 1][1];
+                area -= coordinates[i + 1][0] * coordinates[i][1];
+            }
+            return Math.abs(area) / 2;
+        }
+
+        // Función para mostrar el siguiente departamento
+        function showNextDepartment() {
+            if (currentIndex >= departmentsWithHospitals.length) return;
+            
+            const department = departmentsWithHospitals[currentIndex];
+            const departmentName = department.properties.NAME_1;
+            const statusDiv = document.getElementById('animationStatus');
+            
+            // Detener rotación de imágenes del departamento anterior
+            if (currentIndex > 0) {
+                const prevDepartment = departmentsWithHospitals[currentIndex - 1];
+                const prevDepartmentName = prevDepartment.properties.NAME_1;
+                stopImageRotation(prevDepartmentName);
+            }
+            
+            // Formatear nombre del departamento para mostrar
+            let displayName = departmentName;
+            if (departmentName === 'AtlánticoNorte') {
+                displayName = 'Atlántico Norte';
+            } else if (departmentName === 'NuevaSegovia') {
+                displayName = 'Nueva Segovia';
+            }
+            
+            // Determinar si es completado o en construcción
+            const hospitalInfo = hospitalData[departmentName];
+            const statusText = hospitalInfo.status === 'completed' ? 'Completado' : 'En Construcción';
+            
+            // Actualizar estado
+            statusDiv.textContent = `Mostrando: ${displayName} (${statusText}) - ${currentIndex + 1}/${departmentsWithHospitals.length}`;
+            
+            // Calcular el centro geométrico del departamento
+            const center = calculateCenter(department.geometry);
+            
+            // Mover la cámara al centro del departamento con zoom apropiado
+            map.setView([center[0], center[1]], 8, {
+                animate: true,
+                duration: 1.0
+            });
+            
+            // Abrir popup después de un pequeño delay para que termine el movimiento
+            setTimeout(() => {
+                // Buscar el layer correspondiente y abrir su popup
+                geoJsonLayer.eachLayer(function(layer) {
+                    if (layer.feature.properties.NAME_1 === departmentName) {
+                        layer.openPopup();
+                        
+                        // Iniciar rotación de imágenes si el departamento tiene hospitales
+                        const hospitalInfo = hospitalData[departmentName];
+                        if (hospitalInfo && hospitalInfo.images && hospitalInfo.images.length > 0) {
+                            console.log(`Iniciando rotación automática para ${departmentName}`);
+                            setTimeout(() => {
+                                startImageRotation(departmentName, hospitalInfo.images);
+                                // Iniciar verificación para avanzar al siguiente departamento
+                                setTimeout(checkAndAdvance, 1000);
+                            }, 500);
+                        } else {
+                            // Si no hay imágenes, avanzar después de 6 segundos
+                            setTimeout(() => {
+                                currentIndex++;
+                                if (currentIndex < departmentsWithHospitals.length) {
+                                    showNextDepartment();
+                                } else {
+                                    stopAnimation();
+                                }
+                            }, 6000);
+                        }
+                    }
+                });
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
