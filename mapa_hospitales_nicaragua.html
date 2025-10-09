@@ -241,7 +241,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>🏥 Nuevos Hospitales en Construcción en Nicaragua 🏥</h1>
+        <h1>🏥 Nuevos Hospitales en Construcción en Nicaragua 2025 - v2 🏥</h1>
     </div>
     
     <div class="container">
@@ -288,7 +288,7 @@
                 status: "completed", 
                 name: "Hospital Escuela Oscar Danilo Rosales", 
                 emoji: "🏥",
-                fecha: "22 de septiembre de 2024",
+                fecha: "22 de septiembre de 2025",
                 images: ["h1.jpg", "h2.jpg", "h3.jpg"]
             },
             "Matagalpa": { 
@@ -311,6 +311,28 @@
                 emoji: "🏥",
                 fecha: "2025",
                 images: ["heroes1.jpg", "heroes2.jpg", "heroes3.jpg"]
+            },
+            "Granada": { 
+                status: "construction", 
+                name: "Hospital Primario Tepeyac", 
+                emoji: "🏗️",
+                fecha: "15 de Diciembre de 2025",
+                images: ["granada1.jpeg", "granada2.jpeg", "granada3.jpeg"]
+            },
+            "Managua": { 
+                status: "construction", 
+                name: "Hospital Primario en San Rafael del Sur", 
+                emoji: "🏗️",
+                fecha: "26 de Diciembre de 2025",
+                images: ["sanrafa1.jpeg", "sanrafa2.jpeg", "sanrafa3.jpeg"],
+                coordinates: [11.84987594390183, -86.44008809484309]
+            },
+            "Estelí": { 
+                status: "construction", 
+                name: "Hospital de Hemodiálisis Flor de Pino", 
+                emoji: "🏗️",
+                fecha: "10 de Diciembre de 2025",
+                images: ["esteli1.jpg", "esteli2.jpg", "esteli3.jpg"]
             }
         };
 
@@ -760,6 +782,8 @@
                 displayName = 'Atlántico Norte';
             } else if (departmentName === 'NuevaSegovia') {
                 displayName = 'Nueva Segovia';
+            } else if (departmentName === 'Estelí') {
+                displayName = 'Estelí';
             }
             
             // Determinar si es completado o en construcción
@@ -780,33 +804,66 @@
             
             // Abrir popup después de un pequeño delay para que termine el movimiento
             setTimeout(() => {
-                // Buscar el layer correspondiente y abrir su popup
-                geoJsonLayer.eachLayer(function(layer) {
-                    if (layer.feature.properties.NAME_1 === departmentName) {
-                        layer.openPopup();
-                        
-                        // Iniciar rotación de imágenes si el departamento tiene hospitales
-                        const hospitalInfo = hospitalData[departmentName];
-                        if (hospitalInfo && hospitalInfo.images && hospitalInfo.images.length > 0) {
-                            console.log(`Iniciando rotación automática para ${departmentName}`);
-                            setTimeout(() => {
-                                startImageRotation(departmentName, hospitalInfo.images);
-                                // Iniciar verificación para avanzar al siguiente departamento
-                                setTimeout(checkAndAdvance, 1000);
-                            }, 500);
-                        } else {
-                            // Si no hay imágenes, avanzar después de 6 segundos
-                            setTimeout(() => {
-                                currentIndex++;
-                                if (currentIndex < departmentsWithHospitals.length) {
-                                    showNextDepartment();
-                                } else {
-                                    stopAnimation();
-                                }
-                            }, 6000);
-                        }
+                const hospitalInfo = hospitalData[departmentName];
+                
+                // Si tiene coordenadas específicas (como San Rafael del Sur), usar esas
+                if (hospitalInfo && hospitalInfo.coordinates) {
+                    console.log(`Usando coordenadas específicas para ${departmentName}:`, hospitalInfo.coordinates);
+                    
+                    // Crear popup en las coordenadas específicas
+                    const popupContent = createPopupContent(departmentName, hospitalInfo);
+                    L.popup()
+                        .setLatLng(hospitalInfo.coordinates)
+                        .setContent(popupContent)
+                        .openOn(map);
+                    
+                    // Iniciar rotación de imágenes
+                    if (hospitalInfo.images && hospitalInfo.images.length > 0) {
+                        console.log(`Iniciando rotación automática para ${departmentName}`);
+                        setTimeout(() => {
+                            startImageRotation(departmentName, hospitalInfo.images);
+                            // Iniciar verificación para avanzar al siguiente departamento
+                            setTimeout(checkAndAdvance, 1000);
+                        }, 500);
+                    } else {
+                        // Si no hay imágenes, avanzar después de 6 segundos
+                        setTimeout(() => {
+                            currentIndex++;
+                            if (currentIndex < departmentsWithHospitals.length) {
+                                showNextDepartment();
+                            } else {
+                                stopAnimation();
+                            }
+                        }, 6000);
                     }
-                });
+                } else {
+                    // Usar el método normal (tooltip en el departamento)
+                    geoJsonLayer.eachLayer(function(layer) {
+                        if (layer.feature.properties.NAME_1 === departmentName) {
+                            layer.openPopup();
+                            
+                            // Iniciar rotación de imágenes si el departamento tiene hospitales
+                            if (hospitalInfo && hospitalInfo.images && hospitalInfo.images.length > 0) {
+                                console.log(`Iniciando rotación automática para ${departmentName}`);
+                                setTimeout(() => {
+                                    startImageRotation(departmentName, hospitalInfo.images);
+                                    // Iniciar verificación para avanzar al siguiente departamento
+                                    setTimeout(checkAndAdvance, 1000);
+                                }, 500);
+                            } else {
+                                // Si no hay imágenes, avanzar después de 6 segundos
+                                setTimeout(() => {
+                                    currentIndex++;
+                                    if (currentIndex < departmentsWithHospitals.length) {
+                                        showNextDepartment();
+                                    } else {
+                                        stopAnimation();
+                                    }
+                                }, 6000);
+                            }
+                        }
+                    });
+                }
             }, 1000);
         }
     </script>
